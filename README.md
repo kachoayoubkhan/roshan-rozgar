@@ -66,8 +66,13 @@ npm run test:phase04
 npm run check:hosted
 ```
 
-The Phase 02 suite uses PGlite. Phase 03 starts an isolated native PostgreSQL cluster and verifies a real two-connection booking race. Both run the production app in Chromium with local HTTP stand-ins for the Supabase Data API and OpenAI. These suites verify application behavior and local PostgreSQL persistence. Live OpenAI and hosted Supabase require separate checks. Set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Phase 03 uses local ports 3103 and 55432 by default. Override them with `PHASE03_TEST_PORT` and `PHASE03_PG_PORT`.
+The Phase 02 suite uses PGlite. Phase 03 starts an isolated native PostgreSQL cluster and verifies a real two-connection booking race. Both run the production app in Chromium with local HTTP stand-ins for the Supabase Data API and OpenAI. These suites verify application behavior and local PostgreSQL persistence. Live OpenAI and hosted Supabase require separate checks. Set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Phase 03/04 tests choose free local ports automatically. Override them with `PHASE03_TEST_PORT` and `PHASE03_PG_PORT` if needed.
 
 ## Credits
 
 Next.js App Router, React, Tailwind CSS, shadcn/ui-style components, Lucide, Fontsource Inter, Zod, the Supabase JavaScript client, and the official OpenAI SDK. Codex and Cursor assisted with implementation and validation. No previous SkillConnect project-specific source was reused.
+
+
+## Hosted demo verification
+
+After the four migrations are applied, run `npm run check:hosted`, start the app with `npm start`, then run `npm run test:hosted`. This last command writes a clearly named demo worker, request, messages, booking and review to the configured hosted project. It verifies the rating after refresh and marks the demo worker offline afterward. It needs Chromium or `PLAYWRIGHT_CHANNEL=chrome`. The schema checker performs read-only checks; Phase 04 behavior is verified by the completed-job flow.
