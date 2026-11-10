@@ -1,10 +1,14 @@
 "use client";
 
+import { useI18n } from "@/components/i18n/provider";
+import { speechLanguage, type Language } from "@/lib/i18n/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Playback = { controller: AbortController; audio?: HTMLAudioElement; url?: string; local?: SpeechSynthesisUtterance };
 
 export function useSpeech() {
+  const { language } = useI18n();
+  const [playbackLanguage, setPlaybackLanguage] = useState<Language>();
   const active = useRef<Playback | null>(null);
   const [status, setStatus] = useState("");
   const [audioUrl, setAudioUrl] = useState<string>();
@@ -18,7 +22,7 @@ export function useSpeech() {
     if (current.url) URL.revokeObjectURL(current.url);
   }, []);
 
-  useEffect(() => clearPlayback, [clearPlayback]);
+  useEffect(() => clearPlayback, [clearPlayback, language]);
 
   function stop() {
     clearPlayback();
@@ -28,10 +32,12 @@ export function useSpeech() {
 
   async function speak(text: string, allowCloud = true) {
     stop();
+    setPlaybackLanguage(language);
     const current: Playback = { controller: new AbortController() };
     active.current = current;
     const synth = window.speechSynthesis;
-    const voice = synth?.getVoices().find(({ lang }) => /^ur(?:-|$)/i.test(lang));
+    const target = speechLanguage(language);
+    const voice = synth?.getVoices().find(({ lang }) => lang.toLowerCase().startsWith(target));
     if (voice) {
       const utterance = new SpeechSynthesisUtterance(text);
       current.local = utterance;
@@ -48,17 +54,17 @@ export function useSpeech() {
     } else if (allowCloud) {
       await speakCloud(current, text);
     } else {
-      setStatus("Tap Listen to hear this in Urdu.");
+      setStatus("Tap Listen to hear the details.");
     }
   }
 
   async function speakCloud(current: Playback, text: string) {
-    setStatus("Preparing AI-generated Urdu audio…");
+    setStatus("Preparing AI-generated audio…");
     try {
       const response = await fetch("/api/intake/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, language: speechLanguage(language) }),
         signal: current.controller.signal,
       });
       if (!response.ok) throw new Error("Audio unavailable");
@@ -66,9 +72,9 @@ export function useSpeech() {
       if (active.current !== current) return;
       current.url = URL.createObjectURL(blob);
       setAudioUrl(current.url);
-      setStatus("AI-generated Urdu audio is ready. Press play to listen.");
+      setStatus("AI-generated audio is ready. Press play to listen.");
     } catch {
-      if (active.current === current) setStatus("Urdu audio is unavailable. Read the details or try Listen again.");
+      if (active.current === current) setStatus("Speech is unavailable. Read the details or try Listen again.");
     }
   }
 
@@ -76,5 +82,5 @@ export function useSpeech() {
     if (active.current && element) active.current.audio = element;
   }, []);
 
-  return { speak, stop, status, audioUrl, attachAudio };
+  return { speak, stop, status: playbackLanguage === language ? status : "", audioUrl: playbackLanguage === language ? audioUrl : undefined, attachAudio };
 }

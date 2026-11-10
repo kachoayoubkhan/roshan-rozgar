@@ -1,3 +1,4 @@
+import type { Language } from "@/lib/i18n/core";
 import "server-only";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
@@ -60,9 +61,9 @@ Return null for missing or uncertain scalar fields, and [] for skills if none we
 Allowed Islamabad neighbourhoods: G-11, G-10, F-10. Normalize spoken sector names to these exact spellings. Allowed trades: plumber, electrician, ac-technician, carpenter. For a customer only, map a clear issue (e.g. a leaking pipe) to its trade. Write the problem concisely in the speaker's language.
 For requests, use today when the user says aaj, today or needs help immediately; soon for an explicitly near-term request; flexible only when the user says the timing is flexible. Put an unambiguous date without a clock time in preferredDate (YYYY-MM-DD); use preferredTime (ISO timestamp with +05:00) only if both a date and an unambiguous clock time are supplied. Never populate both. Leave both null when the date is ambiguous. Today, tomorrow and other clear relative dates are in Asia/Karachi. Express prices and budgets as integer PKR.`;
 
-export async function extract(client: OpenAI, previous: IntakeDraft, transcript: string, signal: AbortSignal): Promise<IntakeDraft> {
+export async function extract(client: OpenAI, previous: IntakeDraft, transcript: string, signal: AbortSignal, language: Language = "ur"): Promise<IntakeDraft> {
   const input = [
-    { role: "developer" as const, content: instructions },
+    { role: "developer" as const, content: instructions + "\nFor newly extracted or explicitly corrected problem descriptions and skill labels, use " + (language === "roman" ? "natural Roman Urdu written in Latin script" : language === "ur" ? "Urdu script" : "English") + ". Preserve names exactly as spoken. Existing previous fields MUST remain verbatim unless the user explicitly changes that field. A display language change never changes previous data." },
     { role: "user" as const, content: JSON.stringify({
       kind: previous.kind,
       todayInIslamabad: new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Karachi", dateStyle: "short" }).format(new Date()),

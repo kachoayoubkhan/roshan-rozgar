@@ -1,3 +1,4 @@
+import { languageSchema } from "@/lib/i18n/language";
 import { z } from "zod";
 import { boundedBody, failure, IntakeError, readJson } from "@/lib/intake/http";
 import { aiFailure, checkedAudio, extract, openAI, transcribe } from "@/lib/intake/openai";
@@ -7,7 +8,7 @@ import { ensureSession, requireSameOrigin, throttle } from "@/lib/intake/session
 export const runtime = "nodejs";
 export const maxDuration = 55;
 
-const textRequest = z.strictObject({ draft: intakeDraft, text: textInput });
+const textRequest = z.strictObject({ draft: intakeDraft, text: textInput, language: languageSchema.default("ur") });
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
     let spoken: File | undefined;
     let text = "";
     let intent: z.infer<typeof intentSchema> = "extract";
+    let language: z.infer<typeof languageSchema> = "ur";
     if (multipart) {
       const body = await boundedBody(request, maxAudioBytes + 32_000);
       const form = await new Response(body, { headers: { "Content-Type": request.headers.get("content-type")! } }).formData().catch(() => { throw new IntakeError(400, "This recording could not be read."); });
@@ -31,6 +33,9 @@ export async function POST(request: Request) {
       const draft = intakeDraft.safeParse(decoded);
       const mode = intentSchema.safeParse(form.get("intent"));
       if (!draft.success || !mode.success) throw new IntakeError(400, "The draft could not be read.");
+      const requestedLanguage = languageSchema.safeParse(form.get("language") ?? "ur");
+      if (!requestedLanguage.success) throw new IntakeError(400, "The draft could not be read.");
+      language = requestedLanguage.data;
       previous = draft.data;
       intent = mode.data;
       spoken = await checkedAudio(file);
@@ -39,6 +44,7 @@ export async function POST(request: Request) {
       if (!input.success) throw new IntakeError(400, "Enter a short description and try again.");
       previous = input.data.draft;
       text = input.data.text;
+      language = input.data.language;
     }
 
     throttle(request, "understand", session, 12);
@@ -47,7 +53,7 @@ export async function POST(request: Request) {
     if (spoken) text = await transcribe(client, spoken, signal);
     const body = intent === "confirm"
       ? { mode: "confirm", confirmed: voiceConfirmed(previous.kind, text) }
-      : { mode: "extract", draft: await extract(client, previous, text, signal), transcript: text };
+      : { mode: "extract", draft: await extract(client, previous, text, signal, language), transcript: text };
     return Response.json(body, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return failure(aiFailure(error)); }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Label, ErrorText } from "@/components/i18n/provider";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, LoaderCircle } from "lucide-react";
@@ -37,9 +38,9 @@ export function SelectWorker({ requestId, workerId }: { requestId: string; worke
     <div className="grid gap-2">
       <Button type="button" className="w-full" disabled={busy} onClick={() => void select()}>
         {busy ? <LoaderCircle className="motion-safe:animate-spin" aria-hidden /> : <ArrowRight aria-hidden />}
-        {busy ? "Opening conversation…" : "Request this worker"}
+        <Label value={busy ? "Opening conversation…" : "Request this worker"} />
       </Button>
-      {error && <p className="text-sm text-red-800" role="alert">{error}</p>}
+      {error && <p className="text-sm text-red-800" role="alert">{error && <ErrorText message={error} />}</p>}
     </div>
   );
 }
@@ -66,9 +67,9 @@ export function AvailabilityControl({ online }: { online: boolean }) {
   return (
     <div className="grid gap-2">
       <Button type="button" variant="outline" className="w-fit" disabled={pending} onClick={() => void change()}>
-        {pending ? "Saving…" : current ? "Go offline" : "Go online"}
+        <Label value={pending ? "Saving…" : current ? "Go offline" : "Go online"} />
       </Button>
-      {error && <p className="text-sm text-red-800" role="alert">{error}</p>}
+      {error && <p className="text-sm text-red-800" role="alert">{error && <ErrorText message={error} />}</p>}
     </div>
   );
 }

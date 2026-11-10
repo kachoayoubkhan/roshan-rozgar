@@ -5,7 +5,7 @@ import { ensureSession, requireSameOrigin, throttle } from "@/lib/intake/session
 
 export const runtime = "nodejs";
 
-const speechInput = z.strictObject({ text: z.string().trim().min(1).max(2500) });
+const speechInput = z.strictObject({ text: z.string().trim().min(1).max(2500), language: z.enum(["ur", "en"]).default("ur") });
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +18,9 @@ export async function POST(request: Request) {
       model: "gpt-4o-mini-tts",
       voice: "alloy",
       input: input.data.text,
-      instructions: "Read the supplied text slowly and clearly in natural Pakistani Urdu. Keep names and sector codes faithful to the text.",
+      instructions: input.data.language === "en"
+        ? "Read the supplied text slowly and clearly in English. Preserve names and sector codes."
+        : "Read the supplied text slowly and clearly in natural Pakistani Urdu. Use Urdu pronunciation for Roman Urdu text. Keep names and sector codes faithful to the text.",
       response_format: "mp3",
     }, { signal: request.signal });
     return new Response(speech.body, { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" } });

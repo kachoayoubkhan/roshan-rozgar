@@ -1,3 +1,4 @@
+import { translate, translateLabel, languageLocale, speechLanguage, type Language } from "@/lib/i18n/core";
 import type { IntakeDraft, IntakeKind } from "./schema";
 import type { Area, Trade } from "../types";
 
@@ -48,25 +49,37 @@ export function preferredTimeLabel(value: string, locale = "en-PK") {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Karachi" }).format(new Date(value));
 }
 
-export function readBack(draft: IntakeDraft) {
+
+export function confirmationPhrase(kind: IntakeKind, language: Language) {
+  if (language === "en") return kind === "worker" ? "Save my profile" : "Save my request";
+  return kind === "worker" ? (language === "ur" ? confirmPhrases.worker.urdu : confirmPhrases.worker.latin)
+    : (language === "ur" ? confirmPhrases.request.urdu : confirmPhrases.request.latin);
+}
+
+export function readBack(draft: IntakeDraft, language: Language = "ur") {
+  const spoken = speechLanguage(language);
+  const t = (key: Parameters<typeof translate>[1], values?: Parameters<typeof translate>[2]) => translate(spoken, key, values);
+  const { trade, serviceArea } = draft.data;
   const common = [
-    draft.data.trade ? `کام: ${tradeUrdu[draft.data.trade]}۔` : "",
-    draft.data.serviceArea ? `علاقہ: ${areaUrdu[draft.data.serviceArea]}، اسلام آباد۔` : "",
+    trade ? t("Service: {value}.", { value: spoken === "ur" ? tradeUrdu[trade] : tradeNames[trade] }) : "",
+    serviceArea ? t("Area: {value}.", { value: spoken === "ur" ? areaUrdu[serviceArea] : serviceArea }) : "",
   ];
   const values = draft.kind === "worker" ? [
-    draft.data.name ? `نام: ${draft.data.name}۔` : "",
+    draft.data.name ? t("Name: {value}.", { value: draft.data.name }) : "",
     ...common,
-    draft.data.experienceYears === null ? "" : `تجربہ: ${draft.data.experienceYears} سال۔`,
-    draft.data.visitChargePkr === null ? "" : `آنے کی فیس: ${draft.data.visitChargePkr} روپے۔`,
-    draft.data.skills.length ? `مہارت: ${draft.data.skills.join("، ")}۔` : "",
+    draft.data.experienceYears === null ? "" : t("Experience: {value} years.", { value: draft.data.experienceYears }),
+    draft.data.visitChargePkr === null ? "" : t("Visit charge: {value} rupees.", { value: draft.data.visitChargePkr }),
+    draft.data.skills.length ? t("Skills: {value}.", { value: draft.data.skills.join(", ") }) : "",
   ] : [
     ...common,
-    draft.data.issueDescription ? `مسئلہ: ${draft.data.issueDescription}۔` : "",
-    draft.data.urgency ? `کتنی جلدی: ${urgencyUrdu[draft.data.urgency]}۔` : "",
-    draft.data.preferredTime ? `وقت: ${preferredTimeLabel(draft.data.preferredTime, "ur-PK")}۔` :
-      draft.data.preferredDate ? `تاریخ: ${draft.data.preferredDate}۔ وقت ابھی طے نہیں۔` : "",
-    draft.data.budgetPkr === null ? "" : `بجٹ: ${draft.data.budgetPkr} روپے۔`,
+    draft.data.issueDescription ? t("Problem: {value}.", { value: draft.data.issueDescription }) : "",
+    draft.data.urgency ? t("Urgency: {value}.", { value: spoken === "ur" ? urgencyUrdu[draft.data.urgency] : urgencyNames[draft.data.urgency] }) : "",
+    draft.data.preferredTime ? t("Preferred time: {value}.", { value: preferredTimeLabel(draft.data.preferredTime, languageLocale[spoken]) }) :
+      draft.data.preferredDate ? t("Preferred date: {value}. The time is not specified.", { value: draft.data.preferredDate }) : "",
+    draft.data.budgetPkr === null ? "" : t("Budget: {value} rupees.", { value: draft.data.budgetPkr }),
   ];
-  const next = followUp(draft)?.urdu ?? `اگر تفصیل درست ہے تو کہیں: ${confirmPhrases[draft.kind].urdu}۔`;
+  const missing = followUp(draft);
+  const next = missing ? translateLabel(spoken, missing.text)
+    : t("If the details are correct, say: {phrase}.", { phrase: confirmationPhrase(draft.kind, spoken) });
   return [...values, next].filter(Boolean).join(" ");
 }

@@ -1,3 +1,4 @@
+import { Text, Label } from "@/components/i18n/provider";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
@@ -34,47 +35,44 @@ export default async function FindWorkers({ searchParams }: {
     <>
       <div className="mb-6 sm:mb-8">
         {preview && <DemoLabel />}
-        <h1 className="page-title mt-3">Qareeb dastiyab hunarmand</h1>
-        <p className="mt-3 max-w-xl text-muted">Find available workers by trade and distance from an Islamabad neighbourhood.</p>
+        <h1 className="page-title mt-3"> <Text k="Qareeb dastiyab hunarmand" /> </h1>
+        <p className="mt-3 max-w-xl text-muted"> <Text k="Find available workers by trade and distance from an Islamabad neighbourhood." /> </p>
       </div>
       {saved && (
         <Card className="mb-5">
-          <h2 className="section-title mb-3">Your saved request</h2>
+          <h2 className="section-title mb-3"> <Text k="Your saved request" /> </h2>
           <Details draft={{ kind: "request", data: saved.request }} />
           {saved.selectedWorkerId && (
-            <Button asChild className="mt-4"><Link href={jobHref("customer", saved.id)}>Open job conversation</Link></Button>
+            <Button asChild className="mt-4"><Link href={jobHref("customer", saved.id)}> <Text k="Open job conversation" /> </Link></Button>
           )}
-          {preview && <p className="mt-3 text-sm text-muted">Live discovery is unavailable. Example profiles cannot receive requests.</p>}
+          {preview && <p className="mt-3 text-sm text-muted"> <Text k="Live discovery is unavailable. Example profiles cannot receive requests." /> </p>}
         </Card>
       )}
-      {query.request && !saved && <p className="mb-5 text-muted">This saved request is unavailable in this browser session.</p>}
+      {query.request && !saved && <p className="mb-5 text-muted"> <Text k="This saved request is unavailable in this browser session." /> </p>}
       <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
         <Card>
-          <h2 className="mb-4 flex items-center gap-2 font-bold"><SlidersHorizontal size={18} aria-hidden /> Filters</h2>
+          <h2 className="mb-4 flex items-center gap-2 font-bold"><SlidersHorizontal size={18} aria-hidden /> <Text k="Filters" /> </h2>
           <form method="get" action="/customer/workers" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {saved && <input type="hidden" name="request" value={saved.id} />}
-            <label className="grid gap-1.5 text-sm font-semibold">Service
-              <select className="form-select font-normal" name="trade" defaultValue={trade ?? ""}>
-                <option value="">All services</option>
-                {trades.map((item) => <option key={item} value={item}>{services[item].label}</option>)}
+            <label className="grid gap-1.5 text-sm font-semibold"> <Text k="Service" /> <select className="form-select font-normal" name="trade" defaultValue={trade ?? ""}>
+                <option value=""> <Text k="All services" /> </option>
+                {trades.map((item) => <option key={item} value={item}><Label value={services[item].label} /></option>)}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-semibold">Neighbourhood
-              <select className="form-select font-normal" name="area" defaultValue={area}>
-                {areas.map((item) => <option key={item} value={item}>{item}, Islamabad</option>)}
+            <label className="grid gap-1.5 text-sm font-semibold"> <Text k="Neighbourhood" /> <select className="form-select font-normal" name="area" defaultValue={area}>
+                {areas.map((item) => <option key={item} value={item}>{item} <Text k=", Islamabad" /> </option>)}
               </select>
             </label>
-            <label className="grid gap-1.5 text-sm font-semibold">Distance
-              <select className="form-select font-normal" name="radius" defaultValue={radius}>
-                <option value="3">Within 3 km</option>
-                <option value="5">Within 5 km</option>
+            <label className="grid gap-1.5 text-sm font-semibold"> <Text k="Distance" /> <select className="form-select font-normal" name="radius" defaultValue={radius}>
+                <option value="3"> <Text k="Within 3 km" /> </option>
+                <option value="5"> <Text k="Within 5 km" /> </option>
               </select>
             </label>
-            <Button className="self-end" type="submit">Apply filters</Button>
+            <Button className="self-end" type="submit"> <Text k="Apply filters" /> </Button>
           </form>
         </Card>
         <section aria-labelledby="results-heading">
-          <h2 id="results-heading" className="section-title mb-4">{workers.length} {workers.length === 1 ? "worker" : "workers"} within {radius} km of {area}</h2>
+          <h2 id="results-heading" className="section-title mb-4"><Text k="{count} workers within {radius} km of {area}" values={{count: workers.length, radius, area}} /></h2>
           {workers.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {workers.map((worker) => (
@@ -85,8 +83,8 @@ export default async function FindWorkers({ searchParams }: {
               ))}
             </div>
           ) : (
-            <EmptyState icon={SearchX} title="No workers match these filters" description="Try a wider distance, a different neighbourhood, or another service.">
-              <Button asChild variant="outline"><Link href={reset}>Reset filters</Link></Button>
+            <EmptyState icon={SearchX} title={<Text k="No workers match these filters" />} description={<Text k="Try a wider distance, a different neighbourhood, or another service." />}>
+              <Button asChild variant="outline"><Link href={reset}> <Text k="Reset filters" /> </Link></Button>
             </EmptyState>
           )}
         </section>

@@ -1,3 +1,4 @@
+import { english, newEnglishContext } from "./language-context.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -9,7 +10,7 @@ import { chromium } from "playwright";
 import { dataApi, readBody, send } from "./data-api.mjs";
 
 const db = new PGlite();
-const workerDraft = { name: "Nadia Ahmed", trade: "plumber", experienceYears: null, serviceArea: "G-11", visitChargePkr: null, skills: ["Pipe fitting"] };
+const workerDraft = { name: english("Nadia Ahmed"), trade: "plumber", experienceYears: null, serviceArea: "G-11", visitChargePkr: null, skills: ["Pipe fitting"] };
 const requestDraft = { trade: "plumber", issueDescription: "Kitchen pipe is leaking", serviceArea: "G-11", urgency: "today", preferredTime: null, preferredDate: "2026-11-10", budgetPkr: null };
 const workerOrigin = { kind: "worker", data: workerDraft };
 let nextTranscript = "";
@@ -34,7 +35,7 @@ async function openAI(req, res, url) {
   const payload = JSON.parse(body.toString("utf8"));
   if (url.pathname.endsWith("/speech")) {
     assert.equal(payload.model, "gpt-4o-mini-tts");
-    assert.match(payload.input, /[\p{Script=Arabic}]/u);
+    assert.match(payload.instructions, /English/);
     speechRequests++;
     res.writeHead(200, { "Content-Type": "audio/mpeg" });
     res.end(Buffer.from("Integration audio stub"));
@@ -102,15 +103,15 @@ try {
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     args: ["--use-fake-device-for-media-stream"],
   });
-  const context = await browser.newContext({ permissions: ["microphone"], viewport: { width: 390, height: 844 } });
+  const context = await newEnglishContext(browser, { permissions: ["microphone"], viewport: { width: 390, height: 844 } });
   await context.addInitScript(() => {
     Object.defineProperty(window.speechSynthesis, "getVoices", { value: () => [] });
   });
   const page = await context.newPage();
   const browserErrors = [];
   page.on("pageerror", (error) => browserErrors.push(error.message));
-  const button = (name) => page.getByRole("button", { name, exact: true });
-  const heading = (name) => page.getByRole("heading", { name, exact: true });
+  const button = (name) => page.getByRole("button", { name: english(name), exact: true });
+  const heading = (name) => page.getByRole("heading", { name: english(name), exact: true });
   const alert = () => page.getByRole("alert").first();
   const request = (path, options) => context.request.post(origin + path, { headers: { origin }, ...options });
   async function record(start, stop, transcript) {
@@ -127,13 +128,13 @@ try {
   assert.equal(crossSite.status(), 403);
   const invalidAudio = await request("/api/intake/understand", {
     multipart: { draft: JSON.stringify(workerOrigin), intent: "extract", audio: {
-      name: "recording.webm", mimeType: "audio/webm", buffer: Buffer.alloc(300),
+      name: english("recording.webm"), mimeType: "audio/webm", buffer: Buffer.alloc(300),
     } },
   });
   assert.equal(invalidAudio.status(), 415);
   const tooLarge = await request("/api/intake/understand", {
     multipart: { draft: JSON.stringify(workerOrigin), intent: "extract", audio: {
-      name: "recording.webm", mimeType: "audio/webm", buffer: Buffer.alloc(3_600_000),
+      name: english("recording.webm"), mimeType: "audio/webm", buffer: Buffer.alloc(3_600_000),
     } },
   });
   assert.equal(tooLarge.status(), 413);
@@ -144,24 +145,24 @@ try {
   await alert().filter({ hasText: "No clear speech was detected" }).waitFor();
   await record("Start recording", "Stop recording", "Mera naam Nadia Ahmed hai. G-11 mein plumber hoon, pipe fitting karti hoon.");
   await heading("Apni profile tasdeeq karein").waitFor();
-  await page.getByText("Kitne saal ka tajurba hai?", { exact: false }).waitFor();
+  await page.getByText(english("Kitne saal ka tajurba hai? How many years have you worked in this trade?"), { exact: false }).waitFor();
   assert.equal(await button("Save profile").count(), 0);
   await button("Listen to details").click();
-  await page.locator("audio[aria-label='AI-generated Urdu playback']").waitFor();
+  await page.locator("audio[aria-label='AI-generated playback']").waitFor();
   await record("Answer by voice", "Stop recording", "Mujhe saat saal ka tajurba hai.");
-  await page.getByText("7 years", { exact: true }).waitFor();
+  await page.getByText(english("7 years"), { exact: true }).waitFor();
   await record("Confirm by voice", "Stop confirmation", "Do not save my profile");
   await alert().filter({ hasText: "No details were saved" }).waitFor();
   assert.equal((await db.query("select count(*)::int as count from workers where display_name = 'Nadia Ahmed'")).rows[0].count, 0);
   await record("Confirm by voice", "Stop confirmation", "پروفائل محفوظ کریں۔");
   await heading("Profile saved").waitFor();
-  await page.getByRole("link", { name: "View my profile" }).click();
+  await page.getByRole("link", { name: english("View my profile") }).click();
   await heading("Saved profile").waitFor();
   await page.reload();
   await heading("Salam, Nadia Ahmed!").waitFor();
 
   console.log("Worker voice capture, follow-up, spoken confirmation and refresh passed.");
-  await page.getByRole("link", { name: "Update profile" }).click();
+  await page.getByRole("link", { name: english("Update profile") }).click();
   await page.waitForURL(origin + "/worker/onboarding");
   await heading("Update your worker profile").waitFor();
   await page.addInitScript(() => {
@@ -171,9 +172,9 @@ try {
   await button("Start recording").click();
   await alert().filter({ hasText: "Microphone permission was denied" }).waitFor();
   await button("Enter details manually").click();
-  await page.getByLabel("Years of experience").fill("8");
+  await page.getByLabel(english("Years of experience")).fill("8");
   await button("Review details").click();
-  await page.getByText("8 years", { exact: true }).waitFor();
+  await page.getByText(english("8 years"), { exact: true }).waitFor();
   assert.equal((await db.query("select experience_years from workers where display_name = 'Nadia Ahmed'")).rows[0].experience_years, 7);
   await button("Save profile changes").click();
   await heading("Profile saved").waitFor();
@@ -188,47 +189,47 @@ try {
   const customer = await context.newPage();
   customer.on("pageerror", (error) => browserErrors.push(error.message));
   await customer.goto(origin + "/customer/home");
-  await customer.getByRole("link", { name: "Describe your job" }).click();
+  await customer.getByRole("link", { name: english("Describe your job") }).click();
   rateLimited = true;
   nextTranscript = "Mere kitchen mein pipe leak ho raha hai. Mujhe aaj G-11 Islamabad mein plumber chahiye.";
-  await customer.getByRole("button", { name: "Start recording" }).click();
-  await customer.getByRole("button", { name: "Stop recording" }).waitFor();
+  await customer.getByRole("button", { name: english("Start recording") }).click();
+  await customer.getByRole("button", { name: english("Stop recording") }).waitFor();
   await wait(600);
-  await customer.getByRole("button", { name: "Stop recording" }).click();
+  await customer.getByRole("button", { name: english("Stop recording") }).click();
   await customer.getByRole("alert").filter({ hasText: "Voice AI is busy" }).waitFor();
   rateLimited = false;
-  await customer.getByLabel("Or type your details").fill(nextTranscript);
-  await customer.getByRole("button", { name: "Understand typed details" }).click();
-  await customer.getByRole("heading", { name: "Confirm your request" }).waitFor();
-  await customer.getByRole("button", { name: "Correct by voice", exact: true }).click();
-  await customer.getByRole("button", { name: "Stop recording", exact: true }).waitFor();
+  await customer.getByLabel(english("Or type your details")).fill(nextTranscript);
+  await customer.getByRole("button", { name: english("Understand typed details") }).click();
+  await customer.getByRole("heading", { name: english("Confirm your request") }).waitFor();
+  await customer.getByRole("button", { name: english("Correct by voice"), exact: true }).click();
+  await customer.getByRole("button", { name: english("Stop recording"), exact: true }).waitFor();
   await wait(600);
   const corrected = customer.waitForResponse((response) => response.url().endsWith("/api/intake/understand") && response.ok());
-  await customer.getByRole("button", { name: "Stop recording", exact: true }).click();
+  await customer.getByRole("button", { name: english("Stop recording"), exact: true }).click();
   await corrected;
-  await customer.getByText("Today", { exact: true }).waitFor();
-  await customer.getByText("2026-11-10 · exact time unspecified").waitFor();
-  await customer.getByRole("button", { name: "Edit details", exact: true }).click();
-  await customer.getByLabel("Budget in PKR (optional)").fill("2500");
-  await customer.getByRole("button", { name: "Review details" }).click();
-  await customer.getByRole("button", { name: "Save request" }).click();
-  await customer.getByRole("link", { name: "Find matching workers" }).click();
-  await customer.getByRole("heading", { name: "Your saved request" }).waitFor();
+  await customer.getByText(english("Today"), { exact: true }).waitFor();
+  await customer.getByText(english("2026-11-10 · exact time unspecified")).waitFor();
+  await customer.getByRole("button", { name: english("Edit details"), exact: true }).click();
+  await customer.getByLabel(english("Budget in PKR (optional)")).fill("2500");
+  await customer.getByRole("button", { name: english("Review details") }).click();
+  await customer.getByRole("button", { name: english("Save request") }).click();
+  await customer.getByRole("link", { name: english("Find matching workers") }).click();
+  await customer.getByRole("heading", { name: english("Your saved request") }).waitFor();
   assert.equal(await customer.locator("select[name='trade']").inputValue(), "plumber");
   assert.equal(await customer.locator("select[name='area']").inputValue(), "G-11");
-  await customer.getByRole("heading", { name: "Ali Raza" }).waitFor();
+  await customer.getByRole("heading", { name: english("Ali Raza") }).waitFor();
   await customer.reload();
-  await customer.getByRole("heading", { name: "Your saved request" }).waitFor();
+  await customer.getByRole("heading", { name: english("Your saved request") }).waitFor();
   assert(await customer.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   const stored = (await db.query("select trade, service_area, preferred_time, preferred_date::text, budget_pkr from service_requests where issue_description = 'Kitchen pipe is leaking'")).rows[0];
   assert.deepEqual(stored, { trade: "plumber", service_area: "G-11", preferred_time: null, preferred_date: "2026-11-10", budget_pkr: 2500 });
 
   console.log("Customer recovery, edit, saved request and matching filters passed.");
-  const foreign = await browser.newPage();
+  const foreign = await (await newEnglishContext(browser)).newPage();
   await foreign.goto(customer.url());
-  await foreign.getByText("This saved request is unavailable in this browser session.").waitFor();
+  await foreign.getByText(english("This saved request is unavailable in this browser session.")).waitFor();
   await foreign.goto(origin + "/worker/home");
-  await foreign.getByRole("heading", { name: "Salam, Ali Raza!" }).waitFor();
+  await foreign.getByRole("heading", { name: english("Salam, Ali Raza!") }).waitFor();
   for (const width of [360, 390, 768, 1280]) {
     await foreign.setViewportSize({ width, height: 844 });
     for (const route of ["/worker/onboarding", "/customer/request"]) {
@@ -236,7 +237,7 @@ try {
       assert(await foreign.evaluate(() => document.documentElement.scrollWidth <= innerWidth), route + " overflows at " + width);
     }
   }
-  const fresh = await browser.newContext();
+  const fresh = await newEnglishContext(browser);
   const savePath = origin + "/api/intake/save";
   const newRequest = { kind: "request", data: { ...requestDraft, issueDescription: "Confirm retry is idempotent" }, draftId: crypto.randomUUID() };
   const save = () => fresh.request.post(savePath, { headers: { origin }, data: newRequest });

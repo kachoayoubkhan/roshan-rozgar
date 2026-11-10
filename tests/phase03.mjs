@@ -1,3 +1,4 @@
+import { english, newEnglishContext } from "./language-context.mjs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -106,9 +107,9 @@ try {
   assert(ready && next.exitCode === null, "Production server did not start");
 
   browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined, args: ["--use-fake-device-for-media-stream"] });
-  const worker = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ["microphone"] });
-  const customer = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const other = await browser.newContext();
+  const worker = await newEnglishContext(browser, { viewport: { width: 390, height: 844 }, permissions: ["microphone"] });
+  const customer = await newEnglishContext(browser, { viewport: { width: 1280, height: 800 } });
+  const other = await newEnglishContext(browser);
   const wp = await worker.newPage();
   const cp = await customer.newPage();
   const browserErrors = [];
@@ -121,8 +122,8 @@ try {
     assert.equal(response.status(), 200);
     return response.json();
   };
-  const button = (page, name) => page.getByRole("button", { name, exact: true });
-  const text = (page, value) => page.getByText(value, { exact: true });
+  const button = (page, name) => page.getByRole("button", { name: english(name), exact: true });
+  const text = (page, value) => page.getByText(english(value), { exact: true });
   async function save(context, payload) {
     const response = await post(context, "/api/intake/save", payload);
     assert.equal(response.status(), 200, await response.text());
@@ -134,7 +135,7 @@ try {
     }
     return result;
   }
-  const profile = { name: "Nadia Phase Three", trade: "plumber", serviceArea: "G-11", experienceYears: 7, visitChargePkr: 1500, skills: [] };
+  const profile = { name: english("Nadia Phase Three"), trade: "plumber", serviceArea: "G-11", experienceYears: 7, visitChargePkr: 1500, skills: [] };
   await save(worker, { kind: "worker", data: profile, method: "assisted", expectedVersion: null });
   const workerId = (await db.query("select id from public.workers where display_name = $1", [profile.name])).rows[0].id;
   async function requestJob(context, problem) {
@@ -152,13 +153,13 @@ try {
   const first = await requestJob(customer, "Kitchen tap leaks");
   await cp.goto(first.href);
   const workerCard = cp.getByRole("heading", { name: profile.name }).locator("xpath=../..").locator("xpath=..");
-  await workerCard.getByRole("button", { name: "Request this worker" }).click();
-  await cp.getByRole("heading", { name: "Messages" }).waitFor();
-  await cp.getByLabel("Message", { exact: true }).fill("The kitchen tap is leaking every morning.");
+  await workerCard.getByRole("button", { name: english("Request this worker") }).click();
+  await cp.getByRole("heading", { name: english("Messages") }).waitFor();
+  await cp.getByLabel(english("Message"), { exact: true }).fill("The kitchen tap is leaking every morning.");
   await button(cp, "Send message").click();
   await text(cp, "The kitchen tap is leaking every morning.").waitFor();
 
-  await wp.getByRole("link", { name: "Kitchen tap leaks" }).click();
+  await wp.getByRole("link", { name: english("Kitchen tap leaks") }).click();
   await text(wp, "The kitchen tap is leaking every morning.").waitFor();
   await wp.reload();
   await text(wp, "The kitchen tap is leaking every morning.").waitFor();
@@ -175,17 +176,17 @@ try {
 
   assert.equal((await act(worker, "quote", first.id, { quoteId: null, amount: -5 })).status(), 422);
   assert.equal((await act(customer, "quote", first.id, { quoteId: null, amount: 2200 })).status(), 403);
-  await wp.getByLabel("Quote amount in PKR").fill("2300");
+  await wp.getByLabel(english("Quote amount in PKR")).fill("2300");
   await button(wp, "Send quote").click();
   await text(cp, "Rs. 2,300").waitFor();
   const firstQuote = (await read(customer, first.id)).quote.id;
-  await wp.getByLabel("Quote amount in PKR").fill("2500");
+  await wp.getByLabel(english("Quote amount in PKR")).fill("2500");
   await button(wp, "Send revised quote").click();
   await text(cp, "Rs. 2,500").waitFor();
   assert.equal((await act(customer, "accept", first.id, { quoteId: firstQuote })).status(), 409);
   await button(cp, "Request a revised price").click();
   await text(wp, "Please send a revised quote. / Nayi qeemat batayein.").waitFor();
-  await wp.getByLabel("Quote amount in PKR").fill("2600");
+  await wp.getByLabel(english("Quote amount in PKR")).fill("2600");
   await button(wp, "Send quote").click();
   await text(cp, "Rs. 2,600").waitFor();
   await button(cp, "Accept price").click();
@@ -195,10 +196,10 @@ try {
 
   const time = new Date(Date.now() + 86_400_000).toISOString();
   const localTime = new Date(Date.parse(time) + 5 * 60 * 60 * 1000).toISOString().slice(0, 16);
-  await cp.getByLabel("Booking date and time (PKT)").fill(localTime);
+  await cp.getByLabel(english("Booking date and time (PKT)")).fill(localTime);
   await button(cp, "Confirm booking").click();
-  await cp.getByRole("heading", { name: "Booking details" }).waitFor();
-  await wp.getByRole("heading", { name: "Booking details" }).waitFor();
+  await cp.getByRole("heading", { name: english("Booking details") }).waitFor();
+  await wp.getByRole("heading", { name: english("Booking details") }).waitFor();
   const booked = (await read(customer, first.id)).booking;
   assert.deepEqual((await read(worker, first.id)).booking, booked);
   assert.equal(booked.amount, 2600);
@@ -210,8 +211,8 @@ try {
   await cp.reload();
   await text(cp, booked.id).waitFor();
   await cp.goto(origin + "/customer/bookings");
-  await cp.getByRole("heading", { name: "Booking history" }).waitFor();
-  await cp.getByRole("link", { name: "Kitchen tap leaks" }).click();
+  await cp.getByRole("heading", { name: english("Booking history") }).waitFor();
+  await cp.getByRole("link", { name: english("Kitchen tap leaks") }).click();
   await text(cp, booked.id).waitFor();
 
   const second = await requestJob(other, "Pipe below sink leaks");
@@ -224,7 +225,7 @@ try {
   assert.equal((await other.request.post(origin + "/api/jobs/voice?request=" + first.id, { headers: { origin }, data: "" })).status(), 404);
   await wp.goto(origin + "/worker/home");
   await text(wp, "Busy with a booking").waitFor();
-  await wp.getByRole("link", { name: "Kitchen tap leaks" }).click();
+  await wp.getByRole("link", { name: english("Kitchen tap leaks") }).click();
   await button(wp, "Start job").click();
   await text(cp, "In progress").first().waitFor();
   await button(wp, "Mark completed").click();
@@ -250,7 +251,7 @@ try {
   await text(wp, "Available for work").waitFor();
   await op.reload();
   await op.getByRole("heading", { name: profile.name }).waitFor();
-  await op.getByText("5.0 (1 reviews)", { exact: false }).waitFor();
+  await op.getByText(english("5.0 (1 reviews)"), { exact: false }).waitFor();
   console.log("Price revisions, booking, history, isolation, busy discovery and completion passed.");
 
   const third = await requestJob(customer, "Bathroom tap needs repair");
