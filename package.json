@@ -16,7 +16,8 @@
     "test:phase04": "node tests/phase03.mjs",
     "check:hosted": "node tests/check-hosted-schema.mjs",
     "test:hosted": "node tests/hosted-flow.mjs",
-    "test:localization": "node tests/localization.mjs"
+    "test:localization": "node tests/localization.mjs",
+    "test:demo": "node tests/local-demo.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5",

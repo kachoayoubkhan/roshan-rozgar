@@ -1,3 +1,5 @@
+import { SearchX } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { Text } from "@/components/i18n/provider";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -41,7 +43,11 @@ export default async function CustomerHome() {
           </div>
           <Button asChild variant="outline"><Link href="/customer/workers"> <Text k="View all" /> <ArrowRight aria-hidden /></Link></Button>
         </div>
-        {!nearby.length && <p className="text-muted"> <Text k="No workers are available nearby right now." /> </p>}
+        {!nearby.length && (
+          <EmptyState icon={SearchX} title={<Text k="No workers are available nearby right now." />} description={<Text k="Try a wider distance, a different neighbourhood, or another service." />}>
+            <Button asChild variant="outline"><Link href="/customer/workers"><Text k="Browse workers" /></Link></Button>
+          </EmptyState>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{nearby.map((worker) => <WorkerCard key={worker.id} worker={worker} />)}</div>
       </section>
     </>

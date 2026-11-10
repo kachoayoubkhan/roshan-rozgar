@@ -38,6 +38,12 @@ export default async function FindWorkers({ searchParams }: {
         <h1 className="page-title mt-3"> <Text k="Qareeb dastiyab hunarmand" /> </h1>
         <p className="mt-3 max-w-xl text-muted"> <Text k="Find available workers by trade and distance from an Islamabad neighbourhood." /> </p>
       </div>
+      {!saved && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-white p-4">
+          <p className="max-w-xl text-sm text-muted"><Text k="Describe a job and choose an available worker to start a conversation." /></p>
+          <Button asChild><Link href="/customer/request"><Text k="Describe your job" /></Link></Button>
+        </div>
+      )}
       {saved && (
         <Card className="mb-5">
           <h2 className="section-title mb-3"> <Text k="Your saved request" /> </h2>

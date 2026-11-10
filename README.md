@@ -11,6 +11,8 @@ npm ci
 npm run dev
 ```
 
+For active editing, use `npm run dev`. For a production demo, stop the running server before `npm run build`, then start it again with `npm start`. Rebuilding while an older production process is still running can leave it serving references to missing JavaScript and CSS files. After a production update, refresh any already-open browser tabs. Run `npm run test:demo` to check real localhost asset loading and navigation.
+
 Open http://localhost:3000. Role navigation and clearly labeled example discovery run without credentials. To enable persistent marketplace flows, copy `.env.example` to `.env.local` and configure:
 
 | Variable | Purpose |

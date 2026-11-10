@@ -112,7 +112,7 @@ try {
   page.on("pageerror", (error) => browserErrors.push(error.message));
   const button = (name) => page.getByRole("button", { name: english(name), exact: true });
   const heading = (name) => page.getByRole("heading", { name: english(name), exact: true });
-  const alert = () => page.getByRole("alert").first();
+  const alert = () => page.locator("main [role=alert]").first();
   const request = (path, options) => context.request.post(origin + path, { headers: { origin }, ...options });
   async function record(start, stop, transcript) {
     nextTranscript = transcript;
@@ -196,7 +196,7 @@ try {
   await customer.getByRole("button", { name: english("Stop recording") }).waitFor();
   await wait(600);
   await customer.getByRole("button", { name: english("Stop recording") }).click();
-  await customer.getByRole("alert").filter({ hasText: "Voice AI is busy" }).waitFor();
+  await customer.locator("main [role=alert]").filter({ hasText: "Voice AI is busy" }).waitFor();
   rateLimited = false;
   await customer.getByLabel(english("Or type your details")).fill(nextTranscript);
   await customer.getByRole("button", { name: english("Understand typed details") }).click();

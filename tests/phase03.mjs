@@ -165,9 +165,13 @@ try {
   await text(wp, "The kitchen tap is leaking every morning.").waitFor();
   await button(wp, "Record message").click();
   await button(wp, "Stop recording").waitFor();
-  await wait(600);
+  // Give Chrome's fake microphone enough time to leave its initial silent interval.
+  await wait(1500);
   await button(wp, "Stop recording").click();
-  await wp.waitForFunction(() => document.querySelector("textarea")?.value === "Main kal aa sakta hoon.");
+  await wp.waitForFunction(() => document.querySelector("textarea")?.value === "Main kal aa sakta hoon.").catch(async (error) => {
+    console.log("Recording check alerts:", await wp.locator("main [role=alert]").allTextContents());
+    throw error;
+  });
   assert.equal((await read(customer, first.id)).messages.length, 1);
   await button(wp, "Send message").click();
   await text(cp, "Main kal aa sakta hoon.").waitFor();
