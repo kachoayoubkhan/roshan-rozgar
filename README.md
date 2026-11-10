@@ -76,3 +76,6 @@ Next.js App Router, React, Tailwind CSS, shadcn/ui-style components, Lucide, Fon
 ## Hosted demo verification
 
 After the four migrations are applied, run `npm run check:hosted`, start the app with `npm start`, then run `npm run test:hosted`. This last command writes a clearly named demo worker, request, messages, booking and review to the configured hosted project. It verifies the rating after refresh and marks the demo worker offline afterward. It needs Chromium or `PLAYWRIGHT_CHANNEL=chrome`. The schema checker performs read-only checks; Phase 04 behavior is verified by the completed-job flow.
+
+
+Hosted verification on 10 November 2026 passed after applying schema.sql, phase_02.sql, phase_03.sql and phase_04.sql without seed.sql. The browser smoke test completed a new worker/customer job through messaging, quote acceptance, booking, completion and review, and verified the 5-star rating after refresh. One labeled demo job remains stored, and its worker is offline.
