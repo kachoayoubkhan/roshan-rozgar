@@ -1,0 +1,13 @@
+ROS HAN ROZGAR — CODEX STARTER PACK
+
+1. Extract this archive into a brand-new empty `roshan-rozgar` folder (or copy its files into your fresh Codex repository).
+2. Open the folder in Codex Desktop (or Cursor if Codex unavailable).
+3. Ensure the project is starting during the official hacking window; all project-specific source code must be newly written.
+4. Ask Codex to read AGENTS.md and paste the full content of PHASE_01_CODEX_PROMPT.md.
+5. Keep `reference/Roshan-Rozgar-MVP-UI.png` available as the required visual reference.
+6. Do NOT put API keys in prompts, source code, or git commits.
+7. After Phase 01, share Codex's report and current code errors so we can issue Phase 02 precisely.
+
+CRITICAL: Figma deadline is 12:00 PM, code deadline 3:00 PM, evaluation 4:00 PM (Pakistan time). If Figma has not been submitted, a teammate should submit that in parallel.
+
+CORRECTION FOR CODEX: This is a RESPONSIVE BROWSER WEB APPLICATION. The supplied UI image shows phone mockups as a visual reference; never ship a fixed phone-frame-only UI. Read WEB_RESPONSIVE_UI_SPEC.md before Phase 01.

@@ -1,0 +1,47 @@
+{
+  "name": "roshan-rozgar",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:phase02": "node tests/phase02.mjs",
+    "test:phase03": "node tests/phase03.mjs",
+    "test:phase04": "node tests/phase03.mjs",
+    "check:hosted": "node tests/check-hosted-schema.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5",
+    "@radix-ui/react-slot": "^1",
+    "@supabase/supabase-js": "^2",
+    "class-variance-authority": "^0.7",
+    "clsx": "^2",
+    "lucide-react": "^0.468",
+    "next": "16.4.6",
+    "openai": "^7.55.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "embedded-postgres": "^18.6.0-beta.19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "playwright": "^1.65.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
